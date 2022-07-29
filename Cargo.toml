@@ -1,0 +1,9 @@
+[package]
+name = "seq2xb"
+version = "0.1.0"
+edition = "2021"
+authors = ["Andy Herbert <andy.herbert@gmail.com>"]
+description = "Converts C64 Seq files to ANSi Art Scene XBin files"
+
+[dependencies]
+clap = {version = "3.2", features = ["derive"]}
