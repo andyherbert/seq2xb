@@ -1,12 +1,33 @@
 use clap::Parser;
 use std::{
     error::Error,
+    fmt::Display,
     fs::File,
     io::{Read, Write},
     path::PathBuf,
 };
 
-fn convert(input: PathBuf, output: PathBuf, background: Option<u8>) -> Result<(), Box<dyn Error>> {
+#[derive(Debug)]
+enum ConvertError {
+    InvalidColumnValue,
+}
+
+impl Display for ConvertError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ConvertError::InvalidColumnValue => write!(f, "Invalid Column Value"),
+        }
+    }
+}
+
+impl Error for ConvertError {}
+
+fn convert(
+    input: PathBuf,
+    output: PathBuf,
+    background: Option<u8>,
+    columns: Option<usize>,
+) -> Result<(), Box<dyn Error>> {
     let bytes = {
         let mut file = File::open(input)?;
         let mut bytes: Vec<u8> = Vec::new();
@@ -56,7 +77,14 @@ fn convert(input: PathBuf, output: PathBuf, background: Option<u8>) -> Result<()
     }
     let mut file = File::create(output)?;
     let mut xbin_bytes = include_bytes!("bin/header.bin").to_vec();
-    let height = screen_bytes.len() / 2 / 40;
+    let width = match columns {
+        Some(0) => return Err(Box::new(ConvertError::InvalidColumnValue)),
+        Some(columns) => columns,
+        None => 40,
+    };
+    let height = screen_bytes.len() / 2 / width;
+    xbin_bytes[5] = u8::try_from(width & 0xff).expect("conversion");
+    xbin_bytes[6] = u8::try_from((width >> 8) & 0xff).expect("conversion");
     xbin_bytes[7] = u8::try_from(height & 0xff).expect("conversion");
     xbin_bytes[8] = u8::try_from((height >> 8) & 0xff).expect("conversion");
     file.write_all(&xbin_bytes)?;
@@ -70,6 +98,9 @@ struct Cli {
     /// Use background color 0-15
     #[clap(short, long, value_name = "0 to 15")]
     background: Option<u8>,
+    /// Use columns 1-many
+    #[clap(short, long, value_name = "1 to many")]
+    columns: Option<usize>,
     #[clap(value_name = "SEQ file")]
     input: PathBuf,
     #[clap(value_name = "XBIN file")]
@@ -78,7 +109,7 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    if let Err(error) = convert(cli.input, cli.output, cli.background) {
+    if let Err(error) = convert(cli.input, cli.output, cli.background, cli.columns) {
         eprintln!("{}", error);
     }
 }
