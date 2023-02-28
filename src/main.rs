@@ -27,6 +27,7 @@ fn convert(
     output: PathBuf,
     background: Option<u8>,
     columns: Option<usize>,
+    shifted: bool,
 ) -> Result<(), Box<dyn Error>> {
     let bytes = {
         let mut file = File::open(input)?;
@@ -76,7 +77,11 @@ fn convert(
         }
     }
     let mut file = File::create(output)?;
-    let mut xbin_bytes = include_bytes!("bin/header.bin").to_vec();
+    let mut xbin_bytes = if shifted {
+        include_bytes!("bin/header-shifted.bin").to_vec()
+    } else {
+        include_bytes!("bin/header-unshifted.bin").to_vec()
+    };
     let width = match columns {
         Some(0) => return Err(Box::new(ConvertError::InvalidColumnValue)),
         Some(columns) => columns,
@@ -98,6 +103,9 @@ struct Cli {
     /// Use background color 0-15
     #[clap(short, long, value_name = "0 to 15")]
     background: Option<u8>,
+    /// Use shifted glyphs
+    #[clap(short, long, action, value_name = "Defaults to unshifted")]
+    shifted: bool,
     /// Use columns 1-many
     #[clap(short, long, value_name = "1 to many")]
     columns: Option<usize>,
@@ -109,7 +117,13 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    if let Err(error) = convert(cli.input, cli.output, cli.background, cli.columns) {
+    if let Err(error) = convert(
+        cli.input,
+        cli.output,
+        cli.background,
+        cli.columns,
+        cli.shifted,
+    ) {
         eprintln!("{}", error);
     }
 }
