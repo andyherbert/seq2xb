@@ -12,5 +12,6 @@ ARGS:
 OPTIONS:
     -b, --background <0 to 15>    Use background color 0-15
     -h, --help                    Print help information
+    -s, --shifted                 Use shifted glyphs
     -V, --version                 Print version information
 ```
