@@ -26,7 +26,7 @@ fn convert(
     input: PathBuf,
     output: PathBuf,
     background: Option<u8>,
-    columns: Option<usize>,
+    columns: Option<u16>,
     shifted: bool,
 ) -> Result<(), Box<dyn Error>> {
     let bytes = {
@@ -84,7 +84,7 @@ fn convert(
     };
     let width = match columns {
         Some(0) => return Err(Box::new(ConvertError::InvalidColumnValue)),
-        Some(columns) => columns,
+        Some(width) => width as usize,
         None => 40,
     };
     let height = screen_bytes.len() / 2 / width;
@@ -107,8 +107,8 @@ struct Cli {
     #[clap(short, long, action, value_name = "Defaults to unshifted")]
     shifted: bool,
     /// Use columns 1-many
-    #[clap(short, long, value_name = "1 to many")]
-    columns: Option<usize>,
+    #[clap(short, long, value_name = "1 to 65535")]
+    columns: Option<u16>,
     #[clap(value_name = "SEQ file")]
     input: PathBuf,
     #[clap(value_name = "XBIN file")]
