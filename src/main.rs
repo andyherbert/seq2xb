@@ -6,7 +6,7 @@ use seq_iterator::{C64Color, IntoSeqIterator};
 use std::{
     error::Error,
     fs::File,
-    io::{Read, Write},
+    io::{BufReader, Read, Write},
     path::PathBuf,
 };
 
@@ -17,16 +17,14 @@ fn convert(
     columns: Option<u16>,
     shifted: bool,
 ) -> Result<(), Box<dyn Error>> {
-    let bytes = {
-        let mut file = File::open(input)?;
-        let mut bytes: Vec<u8> = Vec::new();
-        file.read_to_end(&mut bytes)?;
-        bytes
+    let seq_iter = {
+        let file = File::open(input)?;
+        BufReader::new(file).bytes().flatten().into_seq_iter()
     };
     let mut screen_bytes = Vec::new();
     let background = background.unwrap_or(u8::from(C64Color::Blue)) << 4;
     let mut color = u8::from(C64Color::LightBlue);
-    for seq in bytes.into_seq_iter() {
+    for seq in seq_iter {
         match seq {
             seq_iterator::SeqElement::ClearScreen => continue,
             seq_iterator::SeqElement::Color(value) => color = u8::from(value),
