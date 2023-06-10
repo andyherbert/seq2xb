@@ -1,26 +1,12 @@
+mod seq2xb_error;
 use clap::Parser;
+use seq2xb_error::Seq2XBinError;
 use std::{
     error::Error,
-    fmt::Display,
     fs::File,
     io::{Read, Write},
     path::PathBuf,
 };
-
-#[derive(Debug)]
-enum ConvertError {
-    InvalidColumnValue,
-}
-
-impl Display for ConvertError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ConvertError::InvalidColumnValue => write!(f, "Invalid Column Value"),
-        }
-    }
-}
-
-impl Error for ConvertError {}
 
 fn convert(
     input: PathBuf,
@@ -83,7 +69,7 @@ fn convert(
         include_bytes!("bin/header-unshifted.bin").to_vec()
     };
     let width = match columns {
-        Some(0) => return Err(Box::new(ConvertError::InvalidColumnValue)),
+        Some(0) => return Err(Box::new(Seq2XBinError::InvalidColumnValue)),
         Some(width) => width as usize,
         None => 40,
     };
