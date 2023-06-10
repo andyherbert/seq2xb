@@ -1,6 +1,8 @@
 mod seq2xb_error;
+mod seq_iterator;
 use clap::Parser;
 use seq2xb_error::Seq2XBinError;
+use seq_iterator::{C64Color, IntoSeqIterator};
 use std::{
     error::Error,
     fs::File,
@@ -21,44 +23,17 @@ fn convert(
         file.read_to_end(&mut bytes)?;
         bytes
     };
-    let mut colour = 14; // Light Blue
-    let mut reverse = false;
-    let background = background.unwrap_or(6) << 4;
     let mut screen_bytes = Vec::new();
-    for byte in bytes {
-        match byte {
-            0x93 => continue,    // Clear screen is ignored
-            0x90 => colour = 0,  //Black,
-            0x05 => colour = 1,  //White,
-            0x1c => colour = 2,  //Red,
-            0x9f => colour = 3,  //Cyan,
-            0x9c => colour = 4,  //Purple,
-            0x1e => colour = 5,  //Green,
-            0x1f => colour = 6,  //Blue,
-            0x9e => colour = 7,  //Yellow,
-            0x81 => colour = 8,  //Orange,
-            0x95 => colour = 9,  //Brown,
-            0x96 => colour = 10, //Pink,
-            0x97 => colour = 11, //DarkGrey,
-            0x98 => colour = 12, //MidGrey,
-            0x99 => colour = 13, //LightGreen,
-            0x9a => colour = 14, //LightBlue,
-            0x9b => colour = 15, //LightGrey,
-            0x12 => reverse = true,
-            0x92 => reverse = false,
-            _ => {
-                let code = match byte {
-                    0x40..=0x5f | 0x80..=0xbf => byte - 0x40,
-                    0xc0..=0xfe => byte - 0x80,
-                    0xff => 0x5e,
-                    _ => byte,
-                };
-                if reverse {
-                    screen_bytes.push(code + 0x80);
-                } else {
-                    screen_bytes.push(code);
-                }
-                screen_bytes.push(colour + background);
+    let background = background.unwrap_or(u8::from(C64Color::Blue)) << 4;
+    let mut color = u8::from(C64Color::LightBlue);
+    for seq in bytes.into_seq_iter() {
+        match seq {
+            seq_iterator::SeqElement::ClearScreen => continue,
+            seq_iterator::SeqElement::Color(value) => color = u8::from(value),
+            seq_iterator::SeqElement::Reverse(_) => continue,
+            seq_iterator::SeqElement::Character(value) => {
+                screen_bytes.push(value);
+                screen_bytes.push(color + background);
             }
         }
     }
