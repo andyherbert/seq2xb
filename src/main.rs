@@ -1,5 +1,6 @@
 mod seq2xb_error;
 mod seq_iterator;
+mod xbin_header;
 use clap::Parser;
 use seq2xb_error::Seq2XBinError;
 use seq_iterator::{C64Color, IntoSeqIterator};
@@ -9,6 +10,7 @@ use std::{
     io::{BufReader, Read, Write},
     path::PathBuf,
 };
+use xbin_header::{XBinColor, XBinHeader};
 
 fn convert(
     input: PathBuf,
@@ -35,23 +37,32 @@ fn convert(
             }
         }
     }
-    let mut file = File::create(output)?;
-    let mut xbin_bytes = if shifted {
-        include_bytes!("bin/header-shifted.bin").to_vec()
-    } else {
-        include_bytes!("bin/header-unshifted.bin").to_vec()
-    };
     let width = match columns {
         Some(0) => return Err(Box::new(Seq2XBinError::InvalidColumnValue)),
-        Some(width) => width as usize,
+        Some(width) => width,
         None => 40,
     };
-    let height = screen_bytes.len() / 2 / width;
-    xbin_bytes[5] = u8::try_from(width & 0xff).expect("conversion");
-    xbin_bytes[6] = u8::try_from((width >> 8) & 0xff).expect("conversion");
-    xbin_bytes[7] = u8::try_from(height & 0xff).expect("conversion");
-    xbin_bytes[8] = u8::try_from((height >> 8) & 0xff).expect("conversion");
-    file.write_all(&xbin_bytes)?;
+    let height = (screen_bytes.len() / 2 / width as usize) as u16;
+    let palette = include_str!("palette/commodore64.hex")
+        .lines()
+        .map(|line| XBinColor::from_hex(line).expect("legal hex"))
+        .collect();
+    let font = if shifted {
+        include_bytes!("fonts/PETSCII shifted.F08").to_vec()
+    } else {
+        include_bytes!("fonts/PETSCII unshifted.F08").to_vec()
+    };
+    let mut file = File::create(output)?;
+    let header = XBinHeader {
+        width,
+        height,
+        font_height: 8,
+        palette: Some(palette),
+        font: Some(font),
+        compressed: false,
+        non_blink: true,
+    };
+    file.write_all(&header.as_bytes())?;
     file.write_all(&screen_bytes)?;
     Ok(())
 }
