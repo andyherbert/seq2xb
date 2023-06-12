@@ -1,5 +1,5 @@
 mod seq;
-mod xbin_header;
+mod xbin;
 use clap::Parser;
 use seq::{C64Color, IntoSeqIterator, Seq2XBinError, SeqElement};
 use std::{
@@ -8,7 +8,7 @@ use std::{
     io::{BufReader, Read, Write},
     path::PathBuf,
 };
-use xbin_header::{XBinColor, XBinHeader};
+use xbin::{XBinColor, XBinHeader};
 
 fn convert(
     input: PathBuf,
