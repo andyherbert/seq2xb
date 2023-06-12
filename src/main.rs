@@ -1,9 +1,7 @@
-mod seq2xb_error;
-mod seq_iterator;
+mod seq;
 mod xbin_header;
 use clap::Parser;
-use seq2xb_error::Seq2XBinError;
-use seq_iterator::{C64Color, IntoSeqIterator};
+use seq::{C64Color, IntoSeqIterator, Seq2XBinError, SeqElement};
 use std::{
     error::Error,
     fs::File,
@@ -28,10 +26,10 @@ fn convert(
     let mut color = u8::from(C64Color::LightBlue);
     for seq in seq_iter {
         match seq {
-            seq_iterator::SeqElement::ClearScreen => continue,
-            seq_iterator::SeqElement::Color(value) => color = u8::from(value),
-            seq_iterator::SeqElement::Reverse(_) => continue,
-            seq_iterator::SeqElement::Character(value) => {
+            SeqElement::ClearScreen => continue,
+            SeqElement::Color(value) => color = u8::from(value),
+            SeqElement::Reverse(_) => continue,
+            SeqElement::Character(value) => {
                 screen_bytes.push(value);
                 screen_bytes.push(color + background);
             }
