@@ -67,7 +67,7 @@ pub enum SeqElement {
     Character(u8),
 }
 
-impl<'a> Iterator for SeqIterator<'a> {
+impl Iterator for SeqIterator<'_> {
     type Item = SeqElement;
 
     fn next(&mut self) -> Option<Self::Item> {

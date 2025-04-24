@@ -28,7 +28,7 @@ fn convert(
         match seq {
             SeqElement::ClearScreen => continue,
             SeqElement::Color(value) => color = u8::from(value),
-            SeqElement::Reverse(_) => continue,
+            SeqElement::Reverse(_value) => continue,
             SeqElement::Character(value) => {
                 screen_bytes.push(value);
                 screen_bytes.push(color + background);
